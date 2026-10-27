@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>gLab Physics Lab — Pendulum Experiments</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#172033;--muted:#697386;--line:#e5e9f0;--accent:#315efb;--accent2:#244bd0;--good:#16805b;--header1:#152b65;--header2:#315efb;--soft:#f8f9fc}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.header{background:linear-gradient(135deg,var(--header1),var(--header2));color:white;padding:28px 20px 34px}
+.header-inner,.main{max-width:1100px;margin:auto}.brand{font-size:14px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+h1{font-size:30px;margin:8px 0 5px}.subtitle{opacity:.85}.main{margin-top:-18px;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0;box-shadow:0 6px 24px #1720330b}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
+.btn.secondary{background:#eef2ff;color:#244bd0}.btn:hover{filter:brightness(.96)}
+.drop{border:2px dashed #cbd4e5;border-radius:14px;padding:18px;text-align:center;background:#fafbfe}
+input[type=file]{display:none}.filelabel{display:inline-block;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.metric{border:1px solid var(--line);border-radius:14px;padding:15px}.metric .label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.metric .value{font-size:24px;font-weight:800;margin-top:5px}.metric.g{border-color:#b8e2d3;background:#f5fffb}.metric.g .value{color:var(--good)}
+.formula{background:var(--soft);border-radius:12px;padding:14px;font-size:16px;text-align:center}
+.chartbox{height:430px}.small{font-size:13px;color:var(--muted)}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-size:12px}
+.status{margin-left:auto;font-size:13px;color:var(--muted)}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.nav button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 13px;border-radius:10px;font-weight:750;cursor:pointer}
+.nav button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.view{display:none}.view.active{display:block}
+.control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.control{background:var(--soft);padding:13px;border-radius:12px}
+.control label{display:flex;justify-content:space-between;gap:10px;font-weight:700;margin-bottom:8px}
+input[type=range],select{width:100%;accent-color:var(--accent)}
+.simcanvas{display:block;width:100%;max-width:700px;height:320px;margin:auto;border:1px solid var(--line);border-radius:14px;background:var(--soft)}
+.home-hero{padding:10px 0 4px}.home-hero h2{font-size:28px;margin:4px 0 8px}
+.tile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--soft)}
+.tile h3{margin:0 0 7px}.explain{line-height:1.65}
+body[data-theme="dark"]{--bg:#111827;--card:#1f2937;--text:#f3f4f6;--muted:#b6c0d0;--line:#374151;--soft:#182232;--accent:#8b9cff;--accent2:#a8b4ff;--good:#6ee7b7;--header1:#080f20;--header2:#3749a6}
+body[data-theme="forest"]{--bg:#edf5ef;--card:#fff;--text:#18352a;--muted:#5a7568;--line:#d3e4d9;--soft:#f0f8f3;--accent:#19764c;--accent2:#125c3a;--good:#16805b;--header1:#123c2b;--header2:#27845b}
+body[data-theme="sunset"]{--bg:#fff4ed;--card:#fff;--text:#44251d;--muted:#86665c;--line:#f0d8cc;--soft:#fff8f3;--accent:#d45a35;--accent2:#a93e25;--good:#16805b;--header1:#7c2d28;--header2:#e87542}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.chartbox{height:330px}.tile-grid{grid-template-columns:1fr}.control-grid{grid-template-columns:1fr}}
+
+@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.metric .value{font-size:19px}h1{font-size:25px}.main{padding:0 10px 30px}}
+</style>
+
+<meta name="theme-color" content="#315efb">
+<meta name="description" content="gLab interactive physics laboratory: pendulum gravity, SHM, and heat dissipation simulations.">
+<meta name="application-name" content="gLab Physics Lab">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+</head>
+<body>
+<header class="header"><div class="header-inner">
+<div class="brand">gLab • Physics</div><h1>Pendulum Gravity Calculator</h1>
+<div class="subtitle">Explore gravity, simple harmonic motion, and thermal energy in one interactive lab.</div>
+</div></header>
+<main class="main">
+<nav class="nav" aria-label="Main navigation">
+<button class="active" data-view="home">⌂ Home</button>
+<button data-view="gravity">g from graph</button>
+<button data-view="shm">SHM pendulum</button>
+<button data-view="heat">Heat dissipation</button>
+<button data-view="settings">Theme & settings</button>
+</nav>
+
+<section id="view-home" class="view active">
+  <section class="card home-hero">
+    <div class="home-hero"><div class="brand" style="color:var(--accent);opacity:1">WELCOME TO gLab</div>
+    <h2>Learn physics by experimenting.</h2>
+    <p class="explain">Change variables, observe the motion, inspect the graph, and connect your measurements to the physics behind them.</p>
+    <div class="actions">
+      <button class="btn" onclick="showView('gravity')">Open gravity experiment →</button>
+      <button class="btn secondary" onclick="showView('shm')">Explore pendulum motion</button>
+    </div></div>
+  </section>
+  <section class="tile-grid">
+    <div class="tile"><h3>📈 Calculate g</h3><p>Plot T² against pendulum length, see the origin and centroid, and use the gradient to estimate gravitational acceleration.</p><button class="btn secondary" onclick="showView('gravity')">Open graph</button></div>
+    <div class="tile"><h3>↔ SHM explorer</h3><p>Adjust pendulum length and starting angle to explore amplitude, displacement, and period.</p><button class="btn secondary" onclick="showView('shm')">Open simulation</button></div>
+    <div class="tile"><h3>🌡 Heat dissipation</h3><p>Compare a swinging pendulum with a stationary bob cooling under the same simplified conditions.</p><button class="btn secondary" onclick="showView('heat')">Open comparison</button></div>
+  </section>
+  <section class="card"><h2>Quick physics guide</h2><p class="explain"><b>Gravity:</b> a simple pendulum has approximately T² = (4π²/g)l for small angles. <b>SHM:</b> the restoring force makes the bob oscillate around equilibrium. <b>Energy:</b> a moving bob can lose mechanical energy to air resistance and its support; the heat panel is an illustrative model, not a measured laboratory result.</p></section>
+</section>
+
+<section id="view-gravity" class="view">
+<section class="card">
+<div class="actions">
+<label class="btn filelabel" for="file">📁 Upload Excel</label>
+<input id="file" type="file" accept=".xlsx,.xls,.csv">
+<button class="btn secondary" onclick="loadExample()">↻ Reset data</button>
+<button class="btn secondary" onclick="downloadCSV()">⇩ Export results</button>
+<span class="status" id="status">Using uploaded experiment data</span>
+</div>
+<div class="drop" style="margin-top:14px">Upload an <b>.xlsx</b>, <b>.xls</b>, or <b>.csv</b> file. The app will identify length, period and T² columns where possible.</div>
+</section>
+
+<section class="card">
+<h2 style="margin-top:0">Calculated results</h2>
+<div class="grid">
+<div class="metric"><div class="label">Gradient</div><div class="value" id="m">—</div><div class="small">s²/m</div></div>
+<div class="metric"><div class="label">Intercept</div><div class="value" id="c">—</div><div class="small">s²</div></div>
+<div class="metric"><div class="label">R²</div><div class="value" id="r2">—</div><div class="small">Goodness of fit</div></div>
+<div class="metric g"><div class="label">Calculated g</div><div class="value" id="g">—</div><div class="small">m/s²</div></div>
+</div>
+<div class="formula" style="margin-top:14px"><b>T² = (4π²/g)l + c</b> &nbsp;&nbsp;→&nbsp;&nbsp; <b>g = 4π² / gradient</b></div>
+</section>
+
+<section class="card"><h2 style="margin-top:0">Graph: T² against l</h2>
+<div class="chartbox"><canvas id="chart"></canvas></div></section>
+
+<section class="card"><h2 style="margin-top:0">Experimental data</h2>
+<div style="overflow:auto"><table><thead><tr>
+<th>l (m)</th><th>t₁ (s)</th><th>t₂ (s)</th><th>t₃ (s)</th><th>t avg (s)</th><th>T (s)</th><th>T² (s²)</th>
+</tr></thead><tbody id="tbody"></tbody></table></div></section>
+<section class="card"><h2>How does the graph give g?</h2>
+<p class="explain">For a simple pendulum at small angles, <b>T = 2π√(l/g)</b>. Squaring gives <b>T² = (4π²/g)l</b>, which has the straight-line form y = mx through the origin. Here y = T², x = l, and the gradient m = 4π²/g, so <b>g = 4π²/m</b>.</p>
+<p class="explain">The centroid is the mean point <b>(mean l, mean T²)</b>. This display draws the origin-to-centroid line so it visibly passes through both points; its gradient is mean(T²)/mean(l). Real measurements may scatter around this line. For the most defensible experimental estimate, compare with an unconstrained least-squares fit and discuss uncertainty and systematic error.</p>
+</section>
+</section>
+
+<section id="view-shm" class="view">
+<section class="card"><h2>Simple pendulum: SHM experiment</h2>
+<p class="explain">Change the string length and release angle. The bob is released from rest at the selected angle. Amplitude is the maximum arc displacement from equilibrium; instantaneous displacement is measured along the arc in this simplified model.</p>
+<div class="control-grid">
+<div class="control"><label for="pendLength">Length <span id="pendLengthVal">1.00 m</span></label><input id="pendLength" type="range" min="0.20" max="2.00" step="0.05" value="1"></div>
+<div class="control"><label for="pendAngle">Release angle <span id="pendAngleVal">20°</span></label><input id="pendAngle" type="range" min="2" max="45" step="1" value="20"></div>
+<div class="control"><label for="pendTime">Time <span id="pendTimeVal">0.00 s</span></label><input id="pendTime" type="range" min="0" max="10" step="0.05" value="0"></div>
+<div class="control"><label for="pendSpeed">Animation</label><select id="pendSpeed"><option value="0">Paused</option><option value="1" selected>Normal</option><option value="2">Fast</option></select></div>
+</div>
+<canvas id="pendCanvas" class="simcanvas" width="700" height="320" aria-label="Pendulum simulation"></canvas>
+<div class="grid" style="margin-top:14px">
+<div class="metric"><div class="label">Amplitude (arc)</div><div class="value" id="ampOut">—</div><div class="small">A = Lθ₀ (θ in radians)</div></div>
+<div class="metric"><div class="label">Displacement (arc)</div><div class="value" id="dispOut">—</div><div class="small">s = Lθ(t)</div></div>
+<div class="metric"><div class="label">Period</div><div class="value" id="periodOut">—</div><div class="small">T ≈ 2π√(L/g)</div></div>
+<div class="metric"><div class="label">Angle now</div><div class="value" id="angleOut">—</div><div class="small">Relative to vertical</div></div>
+</div>
+<div class="formula" style="margin-top:14px">θ(t) ≈ θ₀ cos(ωt), &nbsp; ω = √(g/L), &nbsp; s(t) = Lθ(t)</div>
+<p class="small">Small-angle approximation; g = 9.81 m/s². The amplitude formula uses radians, not degrees.</p>
+</section>
+</section>
+
+<section id="view-heat" class="view">
+<section class="card"><h2>Heat dissipation: moving vs static pendulum</h2>
+<p class="explain">This conceptual model compares a bob initially warmer than its surroundings. A swinging bob is assigned a slightly larger effective heat-transfer coefficient to illustrate additional airflow. Real heat loss depends on bob shape, material, airflow, temperature difference, and support friction; motion does not guarantee a fixed extra cooling rate in every setup.</p>
+<div class="control-grid">
+<div class="control"><label for="startTemp">Initial bob temperature <span id="startTempVal">60°C</span></label><input id="startTemp" type="range" min="30" max="100" step="1" value="60"></div>
+<div class="control"><label for="ambientTemp">Ambient temperature <span id="ambientTempVal">25°C</span></label><input id="ambientTemp" type="range" min="10" max="35" step="1" value="25"></div>
+<div class="control"><label for="coolingRate">Base cooling rate <span id="coolingRateVal">0.025 min⁻¹</span></label><input id="coolingRate" type="range" min="0.005" max="0.060" step="0.005" value="0.025"></div>
+<div class="control"><label for="motionBoost">Motion airflow factor <span id="motionBoostVal">1.30×</span></label><input id="motionBoost" type="range" min="1" max="2" step="0.05" value="1.3"></div>
+</div>
+<div class="actions" style="margin:12px 0"><button class="btn" id="heatRun">▶ Run 30-minute model</button><button class="btn secondary" id="heatReset">Reset</button><span class="status" id="heatStatus">Ready</span></div>
+<div class="chartbox"><canvas id="heatCanvas"></canvas></div>
+<div class="grid" style="margin-top:14px">
+<div class="metric"><div class="label">Static bob after 30 min</div><div class="value" id="staticTempOut">—</div><div class="small">Newton cooling model</div></div>
+<div class="metric"><div class="label">Oscillating bob after 30 min</div><div class="value" id="movingTempOut">—</div><div class="small">Illustrative enhanced transfer</div></div>
+<div class="metric"><div class="label">Temperature difference</div><div class="value" id="heatDiffOut">—</div><div class="small">Static minus moving</div></div>
+<div class="metric"><div class="label">Model time</div><div class="value" id="heatTimeOut">0 min</div><div class="small">Simulation time</div></div>
+</div>
+<div class="formula" style="margin-top:14px">T(t) = Tₐ + (T₀ − Tₐ)e<sup>−kt</sup></div>
+<p class="small">This is a simplified educational simulation, not empirical evidence that oscillation always increases cooling.</p>
+</section>
+</section>
+
+<section id="view-settings" class="view">
+<section class="card"><h2>Theme & preferences</h2>
+<p>Choose a colour theme for the lab. Your choice applies immediately while this page is open.</p>
+<div class="control" style="max-width:420px"><label for="themeSelect">Colour theme</label><select id="themeSelect"><option value="light">Light blue</option><option value="dark">Dark</option><option value="forest">Forest green</option><option value="sunset">Sunset</option></select></div>
+<p class="small">Chart and simulation colours adapt to the selected theme. Upload/export and the original data table remain available in the gravity experiment.</p>
+</section>
+</section>
+<section class="card" id="installCard" style="display:none">
+  <h2 style="margin-top:0">Install gLab</h2>
+  <p class="small">Install this physics lab on your device for an app-like experience. Offline support works after the app has been loaded and cached.</p>
+  <button class="btn" id="installButton">＋ Install app</button>
+</section>
+<div class="footer">gLab • Interactive pendulum physics laboratory</div>
+</main>
+
+<script>
+const initialData=[{"length": 0.1, "t1": 14.03, "t2": 13.86, "t3": 14.41, "taverage": 14.1, "T": 0.705, "T2": 0.49702499999999994}, {"length": 0.2, "t1": 19.32, "t2": 18.56, "t3": 18.99, "taverage": 18.956666666666663, "T": 0.9478333333333332, "T2": 0.8983880277777775}, {"length": 0.3, "t1": 22.47, "t2": 22.86, "t3": 22.56, "taverage": 22.63, "T": 1.1315, "T2": 1.2802922499999998}, {"length": 0.4, "t1": 25.69, "t2": 25.93, "t3": 26.12, "taverage": 25.913333333333338, "T": 1.295666666666667, "T2": 1.6787521111111119}, {"length": 0.5, "t1": 28.0, "t2": 28.67, "t3": 28.65, "taverage": 28.439999999999998, "T": 1.422, "T2": 2.022084}, {"length": 0.6, "t1": 31.25, "t2": 31.15, "t3": 30.98, "taverage": 31.126666666666665, "T": 1.5563333333333333, "T2": 2.4221734444444443}]; let data=initialData, chart=null;
+function regression(a){
+ let x=a.map(r=>r.length),y=a.map(r=>r.T2),n=x.length;
+ let xm=x.reduce((s,v)=>s+v,0)/n,ym=y.reduce((s,v)=>s+v,0)/n;
+ let m=ym/xm,c=0,res=0,total=0;
+ for(let i=0;i<n;i++){res+=(y[i]-m*x[i])**2;total+=(y[i]-ym)**2}
+ return {m,c,r2:total===0?1:1-res/total,g:4*Math.PI*Math.PI/m,xm,ym}
+}
+function render(){
+let q=regression(data);
+document.getElementById('m').textContent=q.m.toFixed(4);
+document.getElementById('c').textContent=q.c.toFixed(4);
+document.getElementById('r2').textContent=q.r2.toFixed(5);
+document.getElementById('g').textContent=q.g.toFixed(4);
+let tb=document.getElementById('tbody');tb.innerHTML='';
+data.forEach(r=>{let tr=document.createElement('tr');[r.length,r.t1,r.t2,r.t3,r.taverage,r.T,r.T2].forEach(v=>{let td=document.createElement('td');td.textContent=Number(v).toFixed(4);tr.appendChild(td)});tb.appendChild(tr)});
+let xmin=0,xmax=Math.max(...data.map(r=>r.length))*1.08;
+if(chart)chart.destroy();
+chart=new Chart(document.getElementById('chart'),{type:'scatter',data:{datasets:[
+{label:'Experimental data',data:data.map(r=>({x:r.length,y:r.T2})),pointRadius:5},
+{label:'Origin → centroid line',type:'line',data:[{x:0,y:0},{x:q.xm,y:q.ym},{x:xmax,y:q.m*xmax}],pointRadius:[5,7,0],pointBackgroundColor:['#e05252','#16805b','#16805b'],borderColor:'#16805b',fill:false},{label:'Centroid',data:[{x:q.xm,y:q.ym}],pointRadius:7,pointStyle:'rectRot',pointBackgroundColor:'#e05252'}
+]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{min:0,title:{display:true,text:'Length, l (m)'}},y:{min:0,title:{display:true,text:'T² (s²)'}}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`l = ${c.parsed.x.toFixed(4)}, T² = ${c.parsed.y.toFixed(4)}`}}}}});
+}
+function loadExample(){data=initialData;document.getElementById('status').textContent='Using uploaded experiment data';render()}
+function cleanNumber(v){let n=parseFloat(String(v).replace(/,/g,''));return Number.isFinite(n)?n:null}
+function parseSheet(rows){
+let header=rows[0].map(v=>String(v??'').toLowerCase().trim());
+function find(keys){return header.findIndex(h=>keys.some(k=>h.includes(k)))}
+let il=find(['length',' l ','l (m)','length (m)']), it=find(['period','t (s)',' t ','t(s)']), it2=find(['t²','t2','t^2']);
+let out=[];
+for(let i=1;i<rows.length;i++){let r=rows[i];let L=il>=0?cleanNumber(r[il]):cleanNumber(r[0]);let T=it>=0?cleanNumber(r[it]):cleanNumber(r[5]);let T2=it2>=0?cleanNumber(r[it2]):(T!=null?T*T:null);
+if(L!=null&&T2!=null)out.push({length:L,t1:cleanNumber(r[1])||0,t2:cleanNumber(r[2])||0,t3:cleanNumber(r[3])||0,taverage:cleanNumber(r[4])||0,T:T||Math.sqrt(T2),T2:T2})}
+return out}
+document.getElementById('file').addEventListener('change',async e=>{
+let f=e.target.files[0];if(!f)return;
+try{let buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+let parsed=parseSheet(rows);if(!parsed.length)throw Error('No usable rows found.');
+data=parsed;document.getElementById('status').textContent=`Loaded ${data.length} data points`;render()
+}catch(err){alert('Could not read the file. Please check that the first sheet contains Length and Period/T² data.')}
+});
+function downloadCSV(){
+let q=regression(data);let lines=['Length (m),T (s),T² (s²)',''];
+data.forEach(r=>lines.push(`${r.length},${r.T},${r.T2}`));
+lines.push('',`Gradient,${q.m}`,`Intercept,${q.c}`,`R²,${q.r2}`,`g (m/s²),${q.g}`);
+let blob=new Blob([lines.join('\\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pendulum_g_results.csv';a.click();URL.revokeObjectURL(a.href)
+}
+
+function showView(name){
+ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+ if(name==='shm')drawPendulum();
+ if(name==='heat')drawHeatChart();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+const themeSelect=document.getElementById('themeSelect');
+themeSelect.addEventListener('change',()=>{document.body.dataset.theme=themeSelect.value;if(chart)render();if(heatChart)drawHeatChart();});
+let pendAnim=null;
+function pendValues(){
+ const L=+document.getElementById('pendLength').value, deg=+document.getElementById('pendAngle').value, t=+document.getElementById('pendTime').value;
+ const th0=deg*Math.PI/180, omega=Math.sqrt(9.81/L), period=2*Math.PI/omega, th=th0*Math.cos(omega*t);
+ return {L,deg,t,th0,omega,period,th,amp:L*th0,disp:L*th};
+}
+function drawPendulum(){
+ const v=pendValues(),c=document.getElementById('pendCanvas'),ctx=c.getContext('2d');
+ const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);
+ ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line');ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(20,H-28);ctx.lineTo(W-20,H-28);ctx.stroke();
+ const pivot={x:W/2,y:35},scale=Math.min(125, (H-85)/(v.L+0.2)),r=v.L*scale;
+ const bob={x:pivot.x+r*Math.sin(v.th),y:pivot.y+r*Math.cos(v.th)};
+ ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--muted');ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(pivot.x-38,pivot.y);ctx.lineTo(pivot.x+38,pivot.y);ctx.stroke();
+ ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--accent');ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(bob.x,bob.y);ctx.stroke();
+ ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--accent');ctx.beginPath();ctx.arc(bob.x,bob.y,13,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--muted');ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(pivot.x,pivot.y+Math.min(210,r+20));ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--text');ctx.font='15px system-ui';ctx.fillText('Pivot',pivot.x+45,pivot.y+5);ctx.fillText('Equilibrium',pivot.x+10,pivot.y+Math.min(210,r+18));
+ document.getElementById('pendLengthVal').textContent=v.L.toFixed(2)+' m';
+ document.getElementById('pendAngleVal').textContent=v.deg+'°';
+ document.getElementById('pendTimeVal').textContent=v.t.toFixed(2)+' s';
+ document.getElementById('ampOut').textContent=v.amp.toFixed(3)+' m';
+ document.getElementById('dispOut').textContent=v.disp.toFixed(3)+' m';
+ document.getElementById('periodOut').textContent=v.period.toFixed(3)+' s';
+ document.getElementById('angleOut').textContent=(v.th*180/Math.PI).toFixed(2)+'°';
+}
+['pendLength','pendAngle','pendTime'].forEach(id=>document.getElementById(id).addEventListener('input',drawPendulum));
+document.getElementById('pendSpeed').addEventListener('change',()=>{
+ if(pendAnim)clearInterval(pendAnim);pendAnim=null;
+ const speed=+document.getElementById('pendSpeed').value;
+ if(speed){pendAnim=setInterval(()=>{const el=document.getElementById('pendTime');el.value=(+el.value+0.04*speed)%10;drawPendulum()},40)}
+});
+let heatChart=null, heatElapsed=0, heatTimer=null;
+function heatTemps(t){
+ const T0=+document.getElementById('startTemp').value,Ta=+document.getElementById('ambientTemp').value,k=+document.getElementById('coolingRate').value,boost=+document.getElementById('motionBoost').value;
+ return {stat:Ta+(T0-Ta)*Math.exp(-k*t),move:Ta+(T0-Ta)*Math.exp(-k*boost*t)};
+}
+function drawHeatChart(){
+ const canvas=document.getElementById('heatCanvas');if(!canvas)return;
+ const T0=+document.getElementById('startTemp').value,Ta=+document.getElementById('ambientTemp').value;
+ const labels=[],s=[],m=[];
+ for(let t=0;t<=30;t+=1){labels.push(t);let v=heatTemps(t);s.push(v.stat);m.push(v.move)}
+ if(heatChart)heatChart.destroy();
+ heatChart=new Chart(canvas,{type:'line',data:{labels,datasets:[
+ {label:'Static pendulum',data:s,borderColor:'#e05252',backgroundColor:'#e0525220',tension:.2,pointRadius:0},
+ {label:'Oscillating pendulum',data:m,borderColor:'#16805b',backgroundColor:'#16805b20',tension:.2,pointRadius:0}
+ ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{title:{display:true,text:'Time (min)'}},y:{title:{display:true,text:'Bob temperature (°C)'},suggestedMin:Ta,suggestedMax:T0}},plugins:{legend:{position:'bottom'}}}});
+ updateHeatReadouts();
+}
+function updateHeatReadouts(){
+ const v=heatTemps(heatElapsed);
+ document.getElementById('staticTempOut').textContent=v.stat.toFixed(2)+'°C';
+ document.getElementById('movingTempOut').textContent=v.move.toFixed(2)+'°C';
+ document.getElementById('heatDiffOut').textContent=(v.stat-v.move).toFixed(2)+'°C';
+ document.getElementById('heatTimeOut').textContent=heatElapsed.toFixed(0)+' min';
+}
+['startTemp','ambientTemp','coolingRate','motionBoost'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+ document.getElementById(id+'Val').textContent=id==='startTemp'?document.getElementById(id).value+'°C':id==='ambientTemp'?document.getElementById(id).value+'°C':id==='coolingRate'?(+document.getElementById(id).value).toFixed(3)+' min⁻¹':(+document.getElementById(id).value).toFixed(2)+'×';
+ drawHeatChart();
+}));
+document.getElementById('heatRun').addEventListener('click',()=>{
+ if(heatTimer)clearInterval(heatTimer);heatElapsed=0;document.getElementById('heatStatus').textContent='Running';
+ heatTimer=setInterval(()=>{heatElapsed+=1;if(heatElapsed>=30){heatElapsed=30;clearInterval(heatTimer);heatTimer=null;document.getElementById('heatStatus').textContent='Complete'}updateHeatReadouts()},80);
+});
+document.getElementById('heatReset').addEventListener('click',()=>{if(heatTimer)clearInterval(heatTimer);heatTimer=null;heatElapsed=0;document.getElementById('heatStatus').textContent='Ready';updateHeatReadouts()});
+
+render();drawPendulum();drawHeatChart();
+
+// Progressive Web App support: install prompt + offline app-shell caching.
+let gLabInstallPrompt = null;
+const installCard = document.getElementById('installCard');
+const installButton = document.getElementById('installButton');
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  gLabInstallPrompt = event;
+  if (installCard) installCard.style.display = 'block';
+});
+if (installButton) installButton.addEventListener('click', async () => {
+  if (!gLabInstallPrompt) {
+    alert('To install gLab, open your browser menu and choose “Install app” or “Add to Home screen”.');
+    return;
+  }
+  gLabInstallPrompt.prompt();
+  await gLabInstallPrompt.userChoice;
+  gLabInstallPrompt = null;
+  if (installCard) installCard.style.display = 'none';
+});
+window.addEventListener('appinstalled', () => {
+  if (installCard) installCard.style.display = 'none';
+});
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.warn('gLab offline support could not be enabled:', err);
+    });
+  });
+}
+
+</script>
+</body></html>
